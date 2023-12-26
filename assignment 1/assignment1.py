@@ -47,7 +47,6 @@ class lexer:
         self.text = text
         self.position = -1
         self.currentCharacter = None
-        self.readingVariable = False
         self.next()
 
     #Function to read the next character if there is any.
@@ -62,20 +61,12 @@ class lexer:
         tokens = []
         while(self.currentCharacter != None):
             #Ignore whitespaces and tabs
-            if (self.currentCharacter.isalpha()):
-                #The start or continuation of reading a variable
-                readingVariable = True
-                self.next()
-            elif (self.currentCharacter.isdigit()):
-                #Digits are only after an alphanumerical character(s)
-                if(self.readingVariable == True):
+            if self.currentCharacter.isalpha():
+                #begin of variable found, continue to see if there are more letters or digits 
+                while self.currentCharacter and (self.currentCharacter.isalpha() or self.currentCharacter.isdigit()):
                     self.next()
-            elif(self.readingVariable == True):
-                #Variables are only allowed to be alphanumerical characters
-                #following zero or more numbers, so if we aren't finding more,
-                #the variable ends here
-                self.append(token(TYPE_VAR))
-                self.readingVariable = False
+                #No letter or digit found directly after, thus end of variable name
+                tokens.append(token(TYPE_VAR))
             elif(self.currentCharacter in ' \t'):
                 self.next()
             elif (self.currentCharacter == '('):
@@ -95,4 +86,15 @@ class lexer:
         return tokens, None
 
 
+def run(text):
+    ourlexer = lexer(text)
+    tokensS, errorMess = ourlexer.createTokens()
+    return tokensS, errorMess
 
+while True:
+    textInp = input("inp > ")
+    resultaat, ourError = run(textInp)
+
+    if ourError: print(ourError.showError())
+    else: print(resultaat)
+        
