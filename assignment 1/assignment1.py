@@ -39,6 +39,7 @@ class lexer:
         self.text = text
         self.position = -1
         self.currentCharacter = None
+        self.readingVariable = False
         self.next()
 
     #Function to read the next character if there is any.
@@ -53,7 +54,21 @@ class lexer:
         tokens = []
         while(self.currentCharacter != None):
             #Ignore whitespaces and tabs
-            if(self.currentCharacter in ' \t'):
+            if (self.currentCharacter.isalpha()):
+                #The start or continuation of reading a variable
+                readingVariable = True
+                self.next()
+            elif (self.currentCharacter.isdigit()):
+                #Digits are only after an alphanumerical character(s)
+                if(self.readingVariable == True):
+                    self.next()
+            elif(self.readingVariable == True):
+                #Variables are only allowed to be alphanumerical characters
+                #following zero or more numbers, so if we aren't finding more,
+                #the variable ends here
+                self.append(token(TYPE_VAR))
+                self.readingVariable = False
+            elif(self.currentCharacter in ' \t'):
                 self.next()
             elif (self.currentCharacter == '('):
                 tokens.append(token(TYPE_LEFTPAREN))
@@ -64,6 +79,6 @@ class lexer:
             elif (self.currentCharacter == '\\'):
                 tokens.append(token(TYPE_LAMBDA))
                 self.next()
-            else:
-                
+
+
 
