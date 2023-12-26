@@ -2,7 +2,18 @@
 #s3618765
 #Universiteit Leiden
 
+#ERRORS
+class error:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
 
+    def showError(self):
+        return f'{self.name}: {self.details}'
+    
+class illegalCharacterError(error):
+    def __init__(self,description):
+        super().__init__('illegal character', description)
 
 #TOKENS#
 TYPE_VAR = 'VAR'
@@ -12,7 +23,7 @@ TYPE_LAMBDA = 'LAMBDA'
 
 class token:
     #This function is for creating a new token
-    def __init__(self, Type, Value):
+    def __init__(self, Type, Value = None):
         self.Type = Type
         self.Value = Value
 
@@ -27,9 +38,6 @@ class token:
         
 
 #LEXER#
-
-
-
 class lexer:
 
     #Makes tokens from the characters in the text
@@ -79,6 +87,12 @@ class lexer:
             elif (self.currentCharacter == '\\'):
                 tokens.append(token(TYPE_LAMBDA))
                 self.next()
+            else:
+                illegalChar = self.currentCharacter
+                self.next()
+                return [], illegalCharacterError(illegalChar)
+            
+        return tokens, None
 
 
 
