@@ -5,9 +5,6 @@ import sys
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
-
-
-
 #ERRORS#
 class error:
     def __init__(self, name, description, startPos, endPos):
@@ -20,7 +17,6 @@ class error:
         message = f'{self.name}: {self.description}'
         message += f'\nfrom {self.startPos.fileName}, line: {self.startPos.lineNum+1}'
         return message
-    
     
 class illegalCharacterError(error):
     def __init__(self,description,startPos,endPos):
@@ -53,8 +49,6 @@ class position:
     def copyPos(self):
         #returns this object
         return position(self.index,self.lineNum,self.colomNum,self.fileName,self.fileText)
-
-
 
 #TOKENS#
 TYPE_VAR = 'VAR'
@@ -152,6 +146,7 @@ def run(fileName,text):
 
 def main():
     '''
+    #File support
     #Check if there is an argument given
     if (len(sys.argv) != 2):
         print("Usage: ./assignment1.py <filename>")
@@ -172,7 +167,24 @@ def main():
         print(ourError.showError())
         sys.exit(1)
     else: 
+        #Print each token in the list
+        print('Parsed tokens:', end = ' ')
         print(ourResult)
+        #Print the simplified expression
+        print('Simplified output:', end = ' ')
+        for i, token in enumerate(ourResult):
+            if token.Type == 'VAR':
+                #Leave spaces inbetween variables
+                if i + 1 < len(ourResult) and ourResult[i + 1].Type == 'VAR': end = ' '
+                else: end = ''
+                print(token.Value, end = end)
+            elif token.Type == 'LEFTPAREN':
+                print('(',end='')
+            elif token.Type == 'RIGHTPAREN':
+                print(')',end='')
+            elif token.Type == 'LAMBDA':
+                print('\\',end='')
+
         sys.exit(0)
 
 if __name__ == '__main__':
