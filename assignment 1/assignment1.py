@@ -2,6 +2,10 @@
 #s3618765
 #Universiteit Leiden
 import sys
+letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+           'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+
+
 
 
 #ERRORS#
@@ -100,10 +104,10 @@ class lexer:
         tokens = []
         while(self.currentCharacter != None):
             #Ignore whitespaces and tabs
-            if self.currentCharacter.isalpha():
+            if self.currentCharacter in letters:
                 #begin of variable found, continue to see if there are more letters or digits 
                 newVariable = '' #The construction of the variable name
-                while (self.currentCharacter and (self.currentCharacter.isalpha() or self.currentCharacter.isdigit())) and self.currentCharacter != None :
+                while (self.currentCharacter and (self.currentCharacter in letters or self.currentCharacter.isdigit())) and self.currentCharacter != None :
                     newVariable += self.currentCharacter
                     self.next()
                 #No letter or digit found directly after, thus end of variable name
@@ -117,7 +121,7 @@ class lexer:
             elif (self.currentCharacter == ')'):
                 tokens.append(token(TYPE_RIGHTPAREN))
                 self.next()
-            elif (self.currentCharacter == '\\'):
+            elif (self.currentCharacter == '\\' or self.currentCharacter == 'λ'):
                 tokens.append(token(TYPE_LAMBDA))
                 self.next()
             else:
