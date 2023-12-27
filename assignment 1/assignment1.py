@@ -1,6 +1,8 @@
 #Ryan Behari
 #s3618765
 #Universiteit Leiden
+import sys
+
 
 #ERRORS#
 class error:
@@ -12,7 +14,7 @@ class error:
 
     def showError(self):
         message = f'{self.name}: {self.description}'
-        message += f'\nfile {self.startPos.fileName}, line {self.startPos.lineNum+1}'
+        message += f'\nfrom file {self.startPos.fileName}, line: {self.startPos.lineNum+1}'
         return message
     
     
@@ -130,16 +132,32 @@ class lexer:
             
         return tokens, None
 
+def readFile(fileName):
+    try:
+        with open(fileName, 'r') as file:
+            return file.read()
+    except:
+        return f'file {fileName} not found'
 
 def run(fileName,text):
     ourlexer = lexer(fileName,text)
     tokensS, errorMess = ourlexer.createTokens()
     return tokensS, errorMess
 
-while True:
-    textInp = input("inp > ")
-    resultaat, ourError = run('<stdin>', textInp)
+def main():
+    #Check if there is an argument given
+    if (len(sys.argv) != 2):
+        print("Usage: ./assignment1.py <filename>")
+        sys.exit(1)
+    else:
+        fileContent = readFile(sys.argv[1])
+
+    #run our lexer and collect the tokens and possible errors
+    ourResult, ourError = run(sys.argv[1], fileContent)
 
     if ourError: print(ourError.showError())
-    else: print(resultaat)
+    else: print(ourResult)
+
+if __name__ == '__main__':
+    main()
         
