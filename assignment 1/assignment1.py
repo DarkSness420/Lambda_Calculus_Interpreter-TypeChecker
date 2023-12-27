@@ -4,20 +4,51 @@
 
 #ERRORS#
 class error:
-    def __init__(self, name, description):
+    def __init__(self, name, description, startPos, endPos):
+        self.startPos = startPos
+        self.endPos = endPos
         self.name = name
         self.description = description
 
     def showError(self):
-        return f'{self.name}: {self.description}'
+        message = f'{self.name}: {self.description}'
+        message += f'\nfile {self.startPos.fileName}, line {self.startPos.lineNum+1}'
+        return message
+    
     
 class illegalCharacterError(error):
-    def __init__(self,description):
-        super().__init__('illegal character', description)
+    def __init__(self,description,startPos,endPos):
+        super().__init__('illegal character', description,startPos,endPos)
 
 class illegalNumberError(error):
-    def __init__(self,description):
-        super().__init__('disallowed integer', description)
+    def __init__(self,description,startPos,endPos):
+        super().__init__('disallowed integer', description,startPos,endPos)
+
+#POSITION#
+class position:
+    def __init__(self,index,lineNum,colomNum, fileName, fileText):
+        self.index = index
+        self.lineNum = lineNum
+        self.colomNum = colomNum
+        self.fileName = fileName
+        self.fileText = fileText
+        
+    
+    def next(self, currentCharacter):
+        self.colomNum += 1
+        self.index += 1
+        #check if newline character is found
+        if(currentCharacter == '\n'):
+            #since we start on a new line, the first word is again at column 0
+            self.lineNum += 1
+            self.colomNum = 0
+        return self
+    
+    def copyPos(self):
+        #returns this object
+        return position(self.index,self.lineNum,self.colomNum,self.fileName,self.fileText)
+
+
 
 #TOKENS#
 TYPE_VAR = 'VAR'
@@ -47,17 +78,19 @@ class lexer:
     #Makes tokens from the characters in the text
     #Position is set at -1 because method next will advance
     #it to 0 (first character) to start.
-    def __init__(self,text):
+    def __init__(self,fileName,text):
+        self.fileName = fileName
         self.text = text
-        self.position = -1
+        #start at index and column -1 so we start reading at 0
+        self.position = position(-1,0,-1, fileName, text) 
         self.currentCharacter = None
         self.next()
 
     #Function to read the next character if there is any.
     def next(self):
-        self.position += 1
-        if (self.position < len(self.text)):
-            self.currentCharacter = self.text[self.position]
+        self.position.next(self.currentCharacter)
+        if (self.position.index < len(self.text)):
+            self.currentCharacter = self.text[self.position.index]
         else:
             self.currentCharacter = None
 
@@ -85,26 +118,27 @@ class lexer:
                 tokens.append(token(TYPE_LAMBDA))
                 self.next()
             else:
+                startPos = self.position.copyPos()
                 illegalChar = self.currentCharacter
                 self.next()
                 if(illegalChar.isdigit()):
                     #Numbers only allowed in variables after alpha character(s)
-                    return [], illegalNumberError(illegalChar)
+                    return [], illegalNumberError(illegalChar, startPos, self.position)
                 else:
                     #Other disallowed symbols
-                    return [], illegalCharacterError(illegalChar)
+                    return [], illegalCharacterError(illegalChar, startPos, self.position)
             
         return tokens, None
 
 
-def run(text):
-    ourlexer = lexer(text)
+def run(fileName,text):
+    ourlexer = lexer(fileName,text)
     tokensS, errorMess = ourlexer.createTokens()
     return tokensS, errorMess
 
 while True:
     textInp = input("inp > ")
-    resultaat, ourError = run(textInp)
+    resultaat, ourError = run('<stdin>', textInp)
 
     if ourError: print(ourError.showError())
     else: print(resultaat)
