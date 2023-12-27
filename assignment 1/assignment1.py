@@ -2,7 +2,7 @@
 #s3618765
 #Universiteit Leiden
 
-#ERRORS
+#ERRORS#
 class error:
     def __init__(self, name, description):
         self.name = name
@@ -67,10 +67,14 @@ class lexer:
             #Ignore whitespaces and tabs
             if self.currentCharacter.isalpha():
                 #begin of variable found, continue to see if there are more letters or digits 
+                newVariable = str(self.currentCharacter) #The construction of the variable name
                 while self.currentCharacter and (self.currentCharacter.isalpha() or self.currentCharacter.isdigit()):
                     self.next()
+                    if(self.currentCharacter != None):
+                        #store the whole variable name
+                        newVariable += self.currentCharacter
                 #No letter or digit found directly after, thus end of variable name
-                tokens.append(token(TYPE_VAR))
+                tokens.append(token(TYPE_VAR,newVariable))
             elif(self.currentCharacter in ' \t'):
                 self.next()
             elif (self.currentCharacter == '('):
