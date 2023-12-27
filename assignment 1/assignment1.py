@@ -14,7 +14,7 @@ class error:
 
     def showError(self):
         message = f'{self.name}: {self.description}'
-        message += f'\nfrom file {self.startPos.fileName}, line: {self.startPos.lineNum+1}'
+        message += f'\nfrom {self.startPos.fileName}, line: {self.startPos.lineNum+1}'
         return message
     
     
@@ -108,7 +108,8 @@ class lexer:
                     self.next()
                 #No letter or digit found directly after, thus end of variable name
                 tokens.append(token(TYPE_VAR,newVariable))
-            elif(self.currentCharacter in ' \t'):
+            elif(self.currentCharacter in ' \t\n'):
+                #ignore spaces,tabs and newlines
                 self.next()
             elif (self.currentCharacter == '('):
                 tokens.append(token(TYPE_LEFTPAREN))
@@ -133,6 +134,7 @@ class lexer:
         return tokens, None
 
 def readFile(fileName):
+    #read the file if it can be found
     try:
         with open(fileName, 'r') as file:
             return file.read()
@@ -145,18 +147,29 @@ def run(fileName,text):
     return tokensS, errorMess
 
 def main():
+    '''
     #Check if there is an argument given
     if (len(sys.argv) != 2):
         print("Usage: ./assignment1.py <filename>")
         sys.exit(1)
     else:
         fileContent = readFile(sys.argv[1])
+    '''
+
+    if(len(sys.argv) >= 2):
+        print("No command line arguments allowed")
+        sys.exit(1)
 
     #run our lexer and collect the tokens and possible errors
-    ourResult, ourError = run(sys.argv[1], fileContent)
+    text = input('Enter expression: ')
+    ourResult, ourError = run('<stdin>', text)
 
-    if ourError: print(ourError.showError())
-    else: print(ourResult)
+    if ourError: 
+        print(ourError.showError())
+        sys.exit(1)
+    else: 
+        print(ourResult)
+        sys.exit(0)
 
 if __name__ == '__main__':
     main()
