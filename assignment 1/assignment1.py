@@ -9,11 +9,15 @@ class error:
         self.description = description
 
     def showError(self):
-        return f'{self.name}: {self.details}'
+        return f'{self.name}: {self.description}'
     
 class illegalCharacterError(error):
     def __init__(self,description):
         super().__init__('illegal character', description)
+
+class illegalNumberError(error):
+    def __init__(self,description):
+        super().__init__('disallowed integer', description)
 
 #TOKENS#
 TYPE_VAR = 'VAR'
@@ -81,7 +85,12 @@ class lexer:
             else:
                 illegalChar = self.currentCharacter
                 self.next()
-                return [], illegalCharacterError(illegalChar)
+                if(illegalChar.isdigit()):
+                    #Numbers only allowed in variables after alpha character(s)
+                    return [], illegalNumberError(illegalChar)
+                else:
+                    #Other disallowed symbols
+                    return [], illegalCharacterError(illegalChar)
             
         return tokens, None
 
