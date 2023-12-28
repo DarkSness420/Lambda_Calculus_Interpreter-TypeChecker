@@ -180,17 +180,20 @@ class lexer:
             
         return tokens, None
 
+#INTERPRETER#
 
 class Name:
     def __init__(self, id):
         self.id = id
 
     def createSubstitution(self, OldName, NewExpression):
-        if(self.id == OldName):
+        if(self.id == OldName.id):
             return NewExpression
         else:
             return self
-
+        
+    def pPrint(self):
+        return self.id
 
 class Function:
     def __init__(self, var, body):
@@ -200,9 +203,11 @@ class Function:
     def createSubstitution(self, OldName, NewExpression):
         return Function(self.var, self.body.createSubstitution(OldName,NewExpression))
     
-
-
-
+    def evaluate(self, arg):
+        return self.body.createSubstitution(self.var, arg)
+    
+    def pPrint(self):
+        return '\\' + self.var.pPrint() + self.body.pPrint()
 
 class Application:
     def __init__(self, op, arg):
@@ -214,6 +219,9 @@ class Application:
 
     def evaluate(self):
         return self.op.evaluate(self.arg)
+    
+    def pPrint(self):
+        return '('+ self.op.pPrint() + ')' + self.arg.pPrint()
 
     
 
