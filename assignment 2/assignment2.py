@@ -5,6 +5,7 @@
 #Assignment 1 code is reused for this assignment#
 
 import sys
+import copy
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
@@ -182,46 +183,57 @@ class lexer:
 
 #INTERPRETER#
 
-class Name:
-    def __init__(self, id):
-        self.id = id
 
-    def createSubstitution(self, OldName, NewExpression):
-        if(self.id == OldName.id):
-            return NewExpression
-        else:
-            return self
+
+
+
+
+
+class Parser:
+    def __init__(self, Tokens: token):
+        self.Tokens = Tokens
+        self.tokenIndex = 0
+    
+    def parse(self):
+        Node = self.expression()
+        return Node
+    
+    def expression(self):
+        nextType = self.Tokens[self.tokenIndex].Type
+        if(nextType == TYPE_VAR):
+            return self.variable()
+        elif(nextType == TYPE_LAMBDA):
+            return self.function()
+        elif(nextType == TYPE_LEFTPAREN):
+            return self.application()
         
-    def pPrint(self):
-        return self.id
-
-class Function:
-    def __init__(self, var, body):
-        self.var = var
-        self.body = body
-
-    def createSubstitution(self, OldName, NewExpression):
-        return Function(self.var, self.body.createSubstitution(OldName,NewExpression))
+    def variable(self):
+        if(self.tokenIndex < len(self.Tokens)):
+            if(self.Tokens[self.tokenIndex].Type == TYPE_VAR):
+                self.tokenIndex += 1
+                return VarNode(self.Tokens[self.tokenIndex-1])
     
-    def evaluate(self, arg):
-        return self.body.createSubstitution(self.var, arg)
+    def function(self):
+        if(self.tokenIndex < len(self.Tokens)):
+            if(self.Tokens[self.tokenIndex].Type == TYPE_LAMBDA):
+                self.tokenIndex += 1
+                ourVar = self.variable()
+                ourExpr = self.expression()
+                return FunctionNode(ourVar, ourExpr)
+       
+    def application(self):
+        if(self.tokenIndex < len(self.Tokens)):
+            if(self.Tokens[self.tokenIndex].Type == TYPE_LEFTPAREN):
+                self.tokenIndex += 1
+                A = self.expression()
+                if(self.tokenIndex < len(self.Tokens)):
+                    B = self.expression()
+                    self.tokenIndex += 1
+                    return ApplicationNode(A, B)
     
-    def pPrint(self):
-        return '\\' + self.var.pPrint() + self.body.pPrint()
 
-class Application:
-    def __init__(self, op, arg):
-        self.op = op
-        self.arg = arg
-
-    def createSubstitution(self, OldName, NewExpression):
-        return Application(self.op.createSubstitution(OldName,NewExpression),self.arg.createSubstitution(OldName, NewExpression))
-
-    def evaluate(self):
-        return self.op.evaluate(self.arg)
     
-    def pPrint(self):
-        return '('+ self.op.pPrint() + ')' + self.arg.pPrint()
+    
 
     
 
@@ -258,6 +270,9 @@ def main():
         #Print each token in the list
         print('Parsed tokens:', end = ' ')
         print(ourResult)
+        P = Parser(ourResult)
+        AST = P.parse()
+        
         sys.exit(0)
 
 if __name__ == '__main__':
