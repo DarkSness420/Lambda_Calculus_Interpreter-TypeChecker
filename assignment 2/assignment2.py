@@ -197,6 +197,7 @@ class parser:
         self.TokenIndex += 1
         if(self.TokenIndex < len(self.Tokens)):
             self.currentToken = self.Tokens[self.TokenIndex]
+        return self.currentToken
 
 
 def readFile(fileName):
