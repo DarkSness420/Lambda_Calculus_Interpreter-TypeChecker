@@ -231,6 +231,23 @@ class Parser:
                     self.tokenIndex += 1
                     return ApplicationNode(A, B)
     
+class FunctionNode:
+    def __init__(self,variable, expr):
+        self.variable = variable
+        self.expr = expr
+    
+    def __repr__(self):
+        return '\\'+str(self.variable)+str(self.expr)
+    
+    def replace(self, varNode, new, newIndex):
+        if (self.expr.replace(varNode,new,newIndex)):
+            self.expr = new
+
+    def renameVars(self,index):
+        self.expr.renameVars(2*index+2)
+        newVar = VarNode(token(TYPE_VAR,self.variable.token.varName, 2*index+2))
+        self.replace(VarNode(self.variable.token), newVar, 2*index+2)
+        self.variable = newVar
 
     
     
