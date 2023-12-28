@@ -1,6 +1,6 @@
 #Ryan Behari
 #s3618765
-#Assignment 1 Syntax
+#Assignment 2 Interpreter
 #Universiteit Leiden
 import sys
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -146,23 +146,15 @@ def run(fileName,text):
     return tokensS, errorMess
 
 def main():
-    '''
-    #File support
     #Check if there is an argument given
     if (len(sys.argv) != 2):
-        print("Usage: ./assignment1.py <filename>")
+        print("Usage: ./assignment2.py <filename>")
         sys.exit(1)
     else:
         fileContent = readFile(sys.argv[1])
-    '''
-
-    if(len(sys.argv) >= 2):
-        print("No command line arguments allowed")
-        sys.exit(1)
 
     #run our lexer and collect the tokens and possible errors
-    text = input('Enter expression: ')
-    ourResult, ourError = run('<stdin>', text)
+    ourResult, ourError = run(sys.argv[1], fileContent)
 
     if ourError: 
         print(ourError.showError())
@@ -171,21 +163,6 @@ def main():
         #Print each token in the list
         print('Parsed tokens:', end = ' ')
         print(ourResult)
-        #Print the simplified expression
-        print('Simplified output:', end = ' ')
-        for i, token in enumerate(ourResult):
-            if token.Type == 'VAR':
-                #Leave spaces inbetween variables
-                if i + 1 < len(ourResult) and ourResult[i + 1].Type == 'VAR': end = ' '
-                else: end = ''
-                print(token.Value, end = end)
-            elif token.Type == 'LEFTPAREN':
-                print('(',end='')
-            elif token.Type == 'RIGHTPAREN':
-                print(')',end='')
-            elif token.Type == 'LAMBDA':
-                print('\\',end='')
-
         sys.exit(0)
 
 if __name__ == '__main__':
