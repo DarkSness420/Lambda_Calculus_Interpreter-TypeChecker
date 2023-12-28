@@ -249,8 +249,28 @@ class FunctionNode:
         self.replace(VarNode(self.variable.token), newVar, 2*index+2)
         self.variable = newVar
 
+class ApplicationNode():
+    def __init__(self, exprA, exprB):
+        self.exprA = exprA
+        self.exprB = exprB
+
+    def __repr__(self):
+        return "("+str(self.exprA)+" "+str(self.exprB)+")"
     
-    
+    def replace(self, varNode, new, newIndex):
+        NEW = copy.deepcopy(new)
+        NEW.renameVariables(newIndex)
+        
+        if self.exprA.replace(varNode, NEW, 2*newIndex+1):
+            self.exprA = NEW
+        if self.exprB.replace(varNode, NEW, 2*newIndex+2):
+            self.exprB = NEW
+
+    def renameVariables(self, index: FunctionNode):
+        self.exprA.renameVariables(2*index+1)
+        self.exprB.renameVariables(2*index+2)
+
+
 
     
 
