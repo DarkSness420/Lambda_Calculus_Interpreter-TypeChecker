@@ -27,6 +27,18 @@ class illegalNumberError(error):
     def __init__(self,description,startPos,endPos):
         super().__init__('disallowed integer', description,startPos,endPos)
 
+class missingExprError(error):
+    def __init__(self,description,startPos,endPos):
+        super().__init__('missing expression', description,startPos,endPos)
+
+class missingVarError(error):
+    def __init__(self,description,startPos,endPos):
+        super().__init__('missing variable', description,startPos,endPos)
+
+class missingParenError(error):
+    def __init__(self,description,startPos,endPos):
+        super().__init__('missing a parenthese', description,startPos,endPos)
+
 #POSITION#
 class position:
     def __init__(self,index,lineNum,colomNum, fileName, fileText):
@@ -97,6 +109,8 @@ class lexer:
 
     def createTokens(self):
         tokens = []
+        lastNormalChar = None
+        parenthesisOpenAmount = 0
         while(self.currentCharacter != None):
             #Ignore whitespaces and tabs
             if self.currentCharacter in letters:
@@ -104,6 +118,7 @@ class lexer:
                 newVariable = '' #The construction of the variable name
                 while (self.currentCharacter and (self.currentCharacter in letters or self.currentCharacter.isdigit())) and self.currentCharacter != None :
                     newVariable += self.currentCharacter
+                    lastNormalChar = self.currentCharacter
                     self.next()
                 #No letter or digit found directly after, thus end of variable name
                 tokens.append(token(TYPE_VAR,newVariable))
@@ -112,14 +127,39 @@ class lexer:
                 self.next()
             elif (self.currentCharacter == '('):
                 tokens.append(token(TYPE_LEFTPAREN))
-                self.next()
+                lastNormalChar = self.currentCharacter
+                parenthesisOpenAmount += 1
+                self.next()       
             elif (self.currentCharacter == ')'):
+                #missing expression found
+                if(lastNormalChar == '('):
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], missingExprError(illegalChar, startPos, self.position)
+                elif (parenthesisOpenAmount == 0):
+                    #Missing an opening parenthese somewhere
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], missingParenError(illegalChar, startPos, self.position)
+                    
                 tokens.append(token(TYPE_RIGHTPAREN))
+                parenthesisOpenAmount -= 1
+                lastNormalChar = self.currentCharacter
                 self.next()
             elif (self.currentCharacter == '\\' or self.currentCharacter == 'λ'):
                 tokens.append(token(TYPE_LAMBDA))
+                lastNormalChar = self.currentCharacter
                 self.next()
+                while (self.currentCharacter and self.currentCharacter in ' \t\n'):
+                    lastNormalChar = self.currentCharacter
+                    self.next()
+                if(self.currentCharacter not in letters):
+                    startPos = self.position.copyPos()
+                    character = '?'
+                    return [], missingVarError(character, startPos, self.position)
+                    
             else:
+                #Unallowed character found
                 startPos = self.position.copyPos()
                 illegalChar = self.currentCharacter
                 self.next()
@@ -129,6 +169,11 @@ class lexer:
                 else:
                     #Other disallowed symbols
                     return [], illegalCharacterError(illegalChar, startPos, self.position)
+        if(parenthesisOpenAmount != 0):
+            #missing some close parenthesis
+            startPos = self.position.copyPos()
+            illegalChar = '?'
+            return [], missingParenError(illegalChar, startPos, self.position)
             
         return tokens, None
 
