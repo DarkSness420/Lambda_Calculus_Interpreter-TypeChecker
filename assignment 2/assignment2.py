@@ -270,7 +270,20 @@ class ApplicationNode():
         self.exprA.renameVariables(2*index+1)
         self.exprB.renameVariables(2*index+2)
 
+class VarNode:
 
+    def __init__(self, token):
+        self.token = token
+
+    def __repr__(self):
+        return str(self.token)
+
+    def replace(self, varNode, new, newIndex):
+        return (varNode.token.varName == self.token.varName)
+
+    def renameVariables(self, index: FunctionNode):
+        pass
+    
 
     
 
