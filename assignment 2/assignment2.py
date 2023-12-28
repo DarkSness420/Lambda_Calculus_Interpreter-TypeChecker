@@ -2,6 +2,8 @@
 #s3618765
 #Assignment 2 Interpreter
 #Universiteit Leiden
+#Assignment 1 code is reused for this assignment#
+
 import sys
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
@@ -108,6 +110,7 @@ class lexer:
             self.currentCharacter = None
 
     def createTokens(self):
+        # Grammar rules: ⟨expr⟩ ::= ⟨var⟩ | '(' ⟨expr⟩ ')' | '\' ⟨var⟩ ⟨expr⟩ | ⟨expr⟩ ⟨expr⟩ #
         tokens = []
         lastNormalChar = None
         parenthesisOpenAmount = 0
@@ -178,26 +181,42 @@ class lexer:
         return tokens, None
 
 
-#NODES#
-class variableNode:
-    def __init__(self, Token):
-        self.token = Token
-    
-    def __repr__(self):
-        return f'{self.Token}'
+class Name:
+    def __init__(self, id):
+        self.id = id
 
-#PARSER#
-class parser:
-    def __init__(self, Tokens):
-        self.Tokens = Tokens
-        self.TokenIndex = -1
-        self.next()
+    def createSubstitution(self, OldName, NewExpression):
+        if(self.id == OldName):
+            return NewExpression
+        else:
+            return self
+
+
+class Function:
+    def __init__(self, var, body):
+        self.var = var
+        self.body = body
+
+    def createSubstitution(self, OldName, NewExpression):
+        return Function(self.var, self.body.createSubstitution(OldName,NewExpression))
     
-    def advance(self):
-        self.TokenIndex += 1
-        if(self.TokenIndex < len(self.Tokens)):
-            self.currentToken = self.Tokens[self.TokenIndex]
-        return self.currentToken
+
+
+
+
+class Application:
+    def __init__(self, op, arg):
+        self.op = op
+        self.arg = arg
+
+    def createSubstitution(self, OldName, NewExpression):
+        return Application(self.op.createSubstitution(OldName,NewExpression),self.arg.createSubstitution(OldName, NewExpression))
+
+    def evaluate(self):
+        return self.op.evaluate(self.arg)
+
+    
+
 
 
 def readFile(fileName):

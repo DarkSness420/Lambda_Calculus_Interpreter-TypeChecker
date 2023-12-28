@@ -108,6 +108,7 @@ class lexer:
             self.currentCharacter = None
 
     def createTokens(self):
+        # Grammar rules: ⟨expr⟩ ::= ⟨var⟩ | '(' ⟨expr⟩ ')' | '\' ⟨var⟩ ⟨expr⟩ | ⟨expr⟩ ⟨expr⟩ #
         tokens = []
         lastNormalChar = None
         parenthesisOpenAmount = 0
