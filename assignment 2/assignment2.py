@@ -193,30 +193,39 @@ class lexer:
 class Parser:
     def __init__(self, Tokens: token):
         self.Tokens = Tokens
-        self.tokenIndex = 0
+        #give this token an index number in case there are more of the same variables
+        self.tokenIndex = 0 
     
     def parse(self):
+        #Parse the expression and put it in a node
         Node = self.expression()
         return Node
     
     def expression(self):
         nextType = self.Tokens[self.tokenIndex].Type
         if(nextType == TYPE_VAR):
+            #If a variable has been found, this is the end of the expression
             return self.variable()
         elif(nextType == TYPE_LAMBDA):
+            #If there is a lambda, this is the start of a function
             return self.function()
         elif(nextType == TYPE_LEFTPAREN):
+            #We can split this expression into a node
+            #with expression A and expression B
             return self.application()
         
     def variable(self):
         if(self.tokenIndex < len(self.Tokens)):
             if(self.Tokens[self.tokenIndex].Type == TYPE_VAR):
+                #create a variable node out of the current token
                 self.tokenIndex += 1
                 return VarNode(self.Tokens[self.tokenIndex-1])
     
     def function(self):
         if(self.tokenIndex < len(self.Tokens)):
             if(self.Tokens[self.tokenIndex].Type == TYPE_LAMBDA):
+                #Lambda token found, so we should find the variable
+                #and after that is the expression part, this is a function alltogether.
                 self.tokenIndex += 1
                 ourVar = self.variable()
                 ourExpr = self.expression()
@@ -225,11 +234,14 @@ class Parser:
     def application(self):
         if(self.tokenIndex < len(self.Tokens)):
             if(self.Tokens[self.tokenIndex].Type == TYPE_LEFTPAREN):
+                #Put the left part of the application into A
                 self.tokenIndex += 1
                 A = self.expression()
                 if(self.tokenIndex < len(self.Tokens)):
+                    #Put the right part of the application into B
                     B = self.expression()
                     self.tokenIndex += 1
+                    #Now just return a node with these two expressions
                     return ApplicationNode(A, B)
     
 class FunctionNode:
@@ -238,6 +250,7 @@ class FunctionNode:
         self.expr = expr
     
     def __repr__(self):
+        #display lambda following the variable and then the expression
         return '\\'+str(self.variable)+str(self.expr)
     
     def replace(self, varNode, new, newIndex):
@@ -245,6 +258,9 @@ class FunctionNode:
             self.expr = new
 
     def renameVars(self,index):
+        #rename a given variable for conversions
+        #and/or reductions by just creating a new node
+        #and replacing the existing one
         self.expr.renameVars(2*index+2)
         newVar = VarNode(token(TYPE_VAR,self.variable.token.Value, 2*index+2))
         self.replace(VarNode(self.variable.token), newVar, 2*index+2)
@@ -256,9 +272,12 @@ class ApplicationNode():
         self.exprB = exprB
 
     def __repr__(self):
+        #display the leftside and rightside expressions
         return "("+str(self.exprA)+" "+str(self.exprB)+")"
     
     def replace(self, varNode, new, newIndex):
+        #We can just copy the existing nodes
+        #and rename them and replace the old node
         NEW = copy.deepcopy(new)
         NEW.renameVariables(newIndex)
         
@@ -272,21 +291,23 @@ class ApplicationNode():
         self.exprB.renameVariables(2*index+2)
 
 class VarNode:
-
     def __init__(self, token):
         self.token = token
 
     def __repr__(self):
+        #put spaces in front and at the end of a variable
+        #its easier to put this in the right format later on
+        #using our putInCorrectFormat function 
         if(self.token.Value):
             return ' ' + str(self.token.Value) + ' '
         else:
             return str(self.token.Type)
-    
 
     def replace(self, varNode, new, newIndex):
         return ((varNode.token.Value == self.token.Value) and (varNode.token.internIndex == self.token.internIndex))
 
     def renameVariables(self, index: FunctionNode):
+        #just as a placeholder for our other functions
         pass
 
 
@@ -300,21 +321,29 @@ class Interpreter:
         return reducedNode
     
     def isFunc(self, Node):
+        #check if the Node is a function node
         return type(Node) == FunctionNode
     
     def isVar(self, Node):
+        #check if the Node is a variable node
         return type(Node) == VarNode
     
     def isApplication(self,Node):
+        #check if the Node is an application node
         return type(Node) == ApplicationNode
     
     def eval(self, Node):
+        #The maximum amount the tree gets reduced
+        #is 'maxReductionSteps' amount of times
         for i in range(self.maxReductionSteps):
             if(self.isApplication(Node)):
                 if(self.isVar(Node.exprA)):
                     Node.exprB =self.eval(Node.exprB)
                     return Node
                 elif (self.isFunc(Node.exprA)):
+                    #Take our variable's internal index, so we know
+                    #which variable to take/make for our new expression
+                    #for our new node
                     newIndex = Node.exprA.variable.token.internIndex
                     Node.exprA.replace(Node.exprA.variable, Node.exprB,newIndex)
                     Node = Node.exprA.expr
@@ -331,6 +360,7 @@ class Interpreter:
                         #Also here check if there hasnt been made any simplifications
                         return Node
             elif(self.isFunc(Node)):
+                #evaluate the current expression further
                 Node.expr = self.eval(Node.expr)
                 return Node
             else:
