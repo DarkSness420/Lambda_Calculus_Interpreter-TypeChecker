@@ -277,7 +277,11 @@ class VarNode:
         self.token = token
 
     def __repr__(self):
-        return str(self.token)
+        if(self.token.Value):
+            return ' ' + str(self.token.Value) + ' '
+        else:
+            return str(self.token.Type)
+    
 
     def replace(self, varNode, new, newIndex):
         return ((varNode.token.Value == self.token.Value) and (varNode.token.internIndex == self.token.internIndex))
@@ -285,14 +289,15 @@ class VarNode:
     def renameVariables(self, index: FunctionNode):
         pass
 
+
 #INTERPRETER#
 class Interpreter:
-    def __init__(self, maxReductionSteps = 10):
+    def __init__(self, maxReductionSteps = 8):
         self.maxReductionSteps = maxReductionSteps
     
     def reduce(self,ast):
-        reducedNodes = self.eval(ast)
-        return reducedNodes
+        reducedNode = self.eval(ast)
+        return reducedNode
     
     def isFunc(self, Node):
         return type(Node) == FunctionNode
@@ -332,9 +337,6 @@ class Interpreter:
                 return Node
         return Node
 
-    
-    
-
 
 def readFile(fileName):
     #read the file if it can be found
@@ -345,9 +347,33 @@ def readFile(fileName):
         return f'file {fileName} not found'
 
 def run(fileName,text):
+    #Runs our lexer on this expression from the file
     ourlexer = lexer(fileName,text)
     tokensS, errorMess = ourlexer.createTokens()
     return tokensS, errorMess
+
+def putInCorrectFormat(inpString):
+    #Puts an expression in the correct space format
+    ourString = ''
+    lastNormalChar = ''
+    spaceLastChar = False
+    for char in inpString:
+        if(char in ' \n\t'):
+            #Check if currentcharacter is a space, enter or tab
+            spaceLastChar = True
+        elif(spaceLastChar ==  True and (lastNormalChar in letters or lastNormalChar.isdigit()) and char in letters):
+            #check if last normal character was a digit or number (thus a var)
+            #and if this character is also a variable if so, put a space
+            ourString += ' ' + char
+            spaceLastChar = False
+            lastNormalChar = char
+        else:
+            #Just add this character
+            spaceLastChar = False
+            ourString += char
+            lastNormalChar = char
+    
+    return ourString
 
 def main():
     #Check if there is an argument given
@@ -361,17 +387,24 @@ def main():
     ourResult, ourError = run(sys.argv[1], fileContent)
 
     if ourError: 
+        #Print the collected error if there is one
         print(ourError.showError())
         sys.exit(1)
     else: 
-        #Print each token in the list
+        #Print the parsed tokens
         print('Parsed tokens:', end = ' ')
         print(ourResult)
+
+        #Parse the expressions using our tokens
+        #Then put  the abstract syntax tree into
+        #the interpreter and simplify it using
+        #Beta reductions and alpha conversions
         Pars = Parser(ourResult)
         AST = Pars.parse()
         Interp = Interpreter()
-        Interp.reduce(AST)
-        
+        reduced_AST = Interp.reduce(AST)
+        print('Simplified expression: ', end = '')
+        print(putInCorrectFormat(str(reduced_AST)))
         sys.exit(0)
 
 if __name__ == '__main__':
