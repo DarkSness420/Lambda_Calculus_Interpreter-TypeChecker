@@ -23,22 +23,27 @@ class error:
         return message
     
 class illegalCharacterError(error):
+    #Error if and illegal character has been found
     def __init__(self,description,startPos,endPos):
         super().__init__('illegal character', description,startPos,endPos)
 
 class illegalNumberError(error):
+    #Error if a number has been found this isn't part of a variable
     def __init__(self,description,startPos,endPos):
         super().__init__('disallowed integer', description,startPos,endPos)
 
 class missingExprError(error):
+    #Missing expression after lambda variable
     def __init__(self,description,startPos,endPos):
         super().__init__('missing expression', description,startPos,endPos)
 
 class missingVarError(error):
+    #Missing variable after a lambda symbol has been found
     def __init__(self,description,startPos,endPos):
         super().__init__('missing variable', description,startPos,endPos)
 
 class missingParenError(error):
+    #There is missing a closed or open parenthese
     def __init__(self,description,startPos,endPos):
         super().__init__('missing a parenthese', description,startPos,endPos)
 
@@ -77,6 +82,7 @@ class token:
     def __init__(self, Type, Value = None):
         self.Type = Type
         self.Value = Value
+        self.internIndex = 0
 
     #Function to represent the token for display
     def __repr__(self):
@@ -240,7 +246,7 @@ class FunctionNode:
 
     def renameVars(self,index):
         self.expr.renameVars(2*index+2)
-        newVar = VarNode(token(TYPE_VAR,self.variable.token.varName, 2*index+2))
+        newVar = VarNode(token(TYPE_VAR,self.variable.token.Value, 2*index+2))
         self.replace(VarNode(self.variable.token), newVar, 2*index+2)
         self.variable = newVar
 
@@ -274,15 +280,15 @@ class VarNode:
         return str(self.token)
 
     def replace(self, varNode, new, newIndex):
-        return (varNode.token.varName == self.token.varName)
+        return ((varNode.token.Value == self.token.Value) and (varNode.token.internIndex == self.token.internIndex))
 
     def renameVariables(self, index: FunctionNode):
         pass
 
 #INTERPRETER#
 class Interpreter:
-    def __init__(self, maxReductions = 10):
-        self.maxReductions = maxReductions
+    def __init__(self, maxReductionSteps = 10):
+        self.maxReductionSteps = maxReductionSteps
     
     def reduce(self,ast):
         reducedNodes = self.eval(ast)
@@ -296,6 +302,36 @@ class Interpreter:
     
     def isApplication(self,Node):
         return type(Node) == ApplicationNode
+    
+    def eval(self, Node):
+        for i in range(self.maxReductionSteps):
+            if(self.isApplication(Node)):
+                if(self.isVar(Node.exprA)):
+                    Node.exprB =self.eval(Node.exprB)
+                    return Node
+                elif (self.isFunc(Node.exprA)):
+                    newIndex = Node.exprA.variable.token.internIndex
+                    Node.exprA.replace(Node.exprA.variable, Node.exprB,newIndex)
+                    Node = Node.exprA.expr
+                elif (self.isApplication(Node.exprA) and self.isVar(Node.exprB)):
+                    previous = Node.exprA
+                    Node.exprA = self.eval(Node.exprA)
+                    if(previous == Node.exprA):
+                        #check if it has not been simplified further
+                        return Node
+                else:
+                    previous = Node.exprA
+                    Node.exprA = self.eval(Node.exprA)
+                    if(previous == Node.exprA):
+                        #Also here check if there hasnt been made any simplifications
+                        return Node
+            elif(self.isFunc(Node)):
+                Node.expr = self.eval(Node.expr)
+                return Node
+            else:
+                return Node
+        return Node
+
     
     
 
@@ -331,8 +367,10 @@ def main():
         #Print each token in the list
         print('Parsed tokens:', end = ' ')
         print(ourResult)
-        P = Parser(ourResult)
-        AST = P.parse()
+        Pars = Parser(ourResult)
+        AST = Pars.parse()
+        Interp = Interpreter()
+        Interp.reduce(AST)
         
         sys.exit(0)
 
