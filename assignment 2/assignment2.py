@@ -181,13 +181,8 @@ class lexer:
             
         return tokens, None
 
-#INTERPRETER#
 
-
-
-
-
-
+#PARSER#
 
 class Parser:
     def __init__(self, Tokens: token):
@@ -283,10 +278,26 @@ class VarNode:
 
     def renameVariables(self, index: FunctionNode):
         pass
-    
 
+#INTERPRETER#
+class Interpreter:
+    def __init__(self, maxReductions = 10):
+        self.maxReductions = maxReductions
     
-
+    def reduce(self,ast):
+        reducedNodes = self.eval(ast)
+        return reducedNodes
+    
+    def isFunc(self, Node):
+        return type(Node) == FunctionNode
+    
+    def isVar(self, Node):
+        return type(Node) == VarNode
+    
+    def isApplication(self,Node):
+        return type(Node) == ApplicationNode
+    
+    
 
 
 def readFile(fileName):
