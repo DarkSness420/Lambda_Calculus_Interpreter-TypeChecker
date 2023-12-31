@@ -48,6 +48,11 @@ class missingParenError(error):
     def __init__(self,description,startPos,endPos):
         super().__init__('missing a parenthese', description,startPos,endPos)
 
+class noOpenParen(error):
+    #the judgement expression should be opened with an open parenthese
+    def __init__(self,description,startPos,endPos):
+        super().__init__('missing expression open parenthese', description,startPos,endPos)
+
 #POSITION#
 class position:
     def __init__(self,index,lineNum,colomNum, fileName, fileText):
@@ -81,8 +86,6 @@ TYPE_LAMBDA = 'LAMBDA'
 TYPE_OFTYPE = 'OFTYPE' # '^' symbol
 TYPE_COLON = 'COLON' # ':' symbol
 
-
-
 class token:
     #This function is for creating a new token
     def __init__(self, Type, Value = None):
@@ -98,3 +101,102 @@ class token:
             return f'{self.Type}:{self.Value}'
         else:
             return f'{self.Type}'
+        
+#LEXER#
+class lexer:
+
+    #Makes tokens from the characters in the text
+    #Position is set at -1 because method next will advance
+    #it to 0 (first character) to start.
+    def __init__(self,fileName,text):
+        self.fileName = fileName
+        self.text = text
+        #start at index and column -1 so we start reading at 0
+        self.position = position(-1,0,-1, fileName, text) 
+        self.currentCharacter = None
+        self.next()
+
+    #Function to read the next character if there is any.
+    def next(self):
+        self.position.next(self.currentCharacter)
+        if (self.position.index < len(self.text)):
+            self.currentCharacter = self.text[self.position.index]
+        else:
+            self.currentCharacter = None
+
+    def createTokens(self):
+        # Grammar rules: ⟨expr⟩ ::= ⟨var⟩ | '(' ⟨expr⟩ ')' | '\' ⟨var⟩ ⟨expr⟩ | ⟨expr⟩ ⟨expr⟩ #
+        tokens = []
+        lastNormalChar = None
+        parenthesisOpenAmount = 0
+        if(self.currentCharacter != '('):
+            #Checks if the expression part of the judgement starts with an open parenthese
+            startPos = self.position.copyPos()
+            illegalChar = self.currentCharacter
+            return [], noOpenParen(illegalChar, startPos, self.position)
+
+        while(self.currentCharacter != None):
+            #Ignore whitespaces and tabs
+            if self.currentCharacter in letters:
+                #begin of variable found, continue to see if there are more letters or digits 
+                newVariable = '' #The construction of the variable name
+                while (self.currentCharacter and (self.currentCharacter in letters or self.currentCharacter.isdigit())) and self.currentCharacter != None :
+                    newVariable += self.currentCharacter
+                    lastNormalChar = self.currentCharacter
+                    self.next()
+                #No letter or digit found directly after, thus end of variable name
+                tokens.append(token(TYPE_LVAR,newVariable))
+            elif(self.currentCharacter in ' \t\n'):
+                #ignore spaces,tabs and newlines
+                self.next()
+            elif (self.currentCharacter == '('):
+                tokens.append(token(TYPE_LEFTPAREN))
+                lastNormalChar = self.currentCharacter
+                parenthesisOpenAmount += 1
+                self.next()       
+            elif (self.currentCharacter == ')'):
+                #missing expression found
+                if(lastNormalChar == '('):
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], missingExprError(illegalChar, startPos, self.position)
+                elif (parenthesisOpenAmount == 0):
+                    #Missing an opening parenthese somewhere
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], missingParenError(illegalChar, startPos, self.position)
+                    
+                tokens.append(token(TYPE_RIGHTPAREN))
+                parenthesisOpenAmount -= 1
+                lastNormalChar = self.currentCharacter
+                self.next()
+            elif (self.currentCharacter == '\\' or self.currentCharacter == 'λ'):
+                tokens.append(token(TYPE_LAMBDA))
+                lastNormalChar = self.currentCharacter
+                self.next()
+                while (self.currentCharacter and self.currentCharacter in ' \t\n'):
+                    lastNormalChar = self.currentCharacter
+                    self.next()
+                if(self.currentCharacter not in letters):
+                    startPos = self.position.copyPos()
+                    character = '?'
+                    return [], missingVarError(character, startPos, self.position)
+                    
+            else:
+                #Unallowed character found
+                startPos = self.position.copyPos()
+                illegalChar = self.currentCharacter
+                self.next()
+                if(illegalChar.isdigit()):
+                    #Numbers only allowed in variables after alpha character(s)
+                    return [], illegalNumberError(illegalChar, startPos, self.position)
+                else:
+                    #Other disallowed symbols
+                    return [], illegalCharacterError(illegalChar, startPos, self.position)
+        if(parenthesisOpenAmount != 0):
+            #missing some close parenthesis
+            startPos = self.position.copyPos()
+            illegalChar = '?'
+            return [], missingParenError(illegalChar, startPos, self.position)
+            
+        return tokens, None
