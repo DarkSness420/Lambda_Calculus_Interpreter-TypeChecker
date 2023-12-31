@@ -10,7 +10,7 @@ is grammatically correct according to lambda calculus, the parsed tokens will be
 and the screen as well as a minimalistic output of the original expression. If there are any
 errors found in the program, this will be displayed instead and the program exits with code 1.
 There are no defects or any deviations from the assignment. The program is tested on python 3.10.7
-and python 3.10.11
+and python 3.10.11 on windows 10.
 
 ##### It is possible to use a file with a <u>single</u> expression in it, and give that to the program to use as stdin newlines, tabs and unnecesary whitepaces (that is, any whitespaces that arent between variables) are ignored.
 
