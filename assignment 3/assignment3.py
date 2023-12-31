@@ -73,10 +73,15 @@ class position:
         return position(self.index,self.lineNum,self.colomNum,self.fileName,self.fileText)
 
 #TOKENS#
-TYPE_VAR = 'VAR'
+TYPE_UVAR = 'UVAR'
+TYPE_LVAR = 'LVAR'
 TYPE_LEFTPAREN = 'LEFTPAREN'
 TYPE_RIGHTPAREN = 'RIGHTPAREN'
 TYPE_LAMBDA = 'LAMBDA'
+TYPE_OFTYPE = 'OFTYPE' # '^' symbol
+TYPE_COLON = 'COLON' # ':' symbol
+
+
 
 class token:
     #This function is for creating a new token
