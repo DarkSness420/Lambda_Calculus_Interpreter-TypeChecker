@@ -70,6 +70,12 @@ class multipleColonsError(error):
     def __init__(self,description,startPos,endPos):
         super().__init__('There are multiple colons in this judgement', description,startPos,endPos)
 
+class missingLvarTypeError(error):
+    #A variable doesn't have a type declared
+    def __init__(self,description,startPos,endPos):
+        super().__init__('There is a variable with an undeclared type', description,startPos,endPos)
+
+
 
 #POSITION#
 class position:
@@ -103,6 +109,7 @@ TYPE_RIGHTPAREN = 'RIGHTPAREN'
 TYPE_LAMBDA = 'LAMBDA'
 TYPE_OFTYPE = 'OFTYPE' # '^' symbol
 TYPE_COLON = 'COLON' # ':' symbol
+TYPE_ARROW = 'ARROW' # '->'
 
 class token:
     #This function is for creating a new token
@@ -153,9 +160,10 @@ class lexer:
         lastTokenType = None #If last token appended is LVAR, this is True.
         colonFound = False
         parenthesisOpenAmount = 0
+        LvariablesMapping = {}
+
 
         while(self.currentCharacter in ' \t\n'):
-            print('aaaa')
             #Keep going untill we find a normal character
             self.next()
 
@@ -166,7 +174,6 @@ class lexer:
             return [], noOpenParen(illegalChar, startPos, self.position)
 
         while(self.currentCharacter != None):
-            print(self.currentCharacter)
             #Ignore whitespaces and tabs
             if self.currentCharacter in lowercaseLetters:
                 #begin of Lvar variable found, continue to see if there are more letters or digits 
@@ -177,6 +184,7 @@ class lexer:
                     self.next()
                 #No letter or digit found directly after, thus end of Lvar variable name
                 tokens.append(token(TYPE_LVAR,newVariable))
+                LvariablesMapping[newVariable] = False #Map this variable to an empty type, to be found later
                 lastTokenType = TYPE_LVAR
             elif(self.currentCharacter in ' \t\n'):
                 #ignore spaces,tabs and newlines
@@ -223,6 +231,7 @@ class lexer:
                     illegalChar = self.currentCharacter
                     return [], noLvarError(illegalChar, startPos, self.position)
                 else:
+                    LvariablesMapping[tokens[-1].Value] = True
                     tokens.append(token(TYPE_OFTYPE))
                     lastTokenType = TYPE_OFTYPE
                     lastNormalChar = self.currentCharacter
@@ -267,8 +276,19 @@ class lexer:
                          illegalChar = self.currentCharacter
                          return [], missingParenError(illegalChar, startPos, self.position)
                     else:
+                        tokens.append(token(TYPE_COLON))
+                        lastTokenType = TYPE_COLON
                         continue
-                    
+            elif (self.currentCharacter == '-'):
+                self.next()
+                if(self.currentCharacter != '>'):
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], illegalCharacterError(illegalChar, startPos, self.position)
+                else:
+                    tokens.append(token(TYPE_ARROW))
+                    lastTokenType = TYPE_ARROW
+                    self.next()
             else:
                 #Unallowed character found
                 startPos = self.position.copyPos()
@@ -285,6 +305,12 @@ class lexer:
             startPos = self.position.copyPos()
             illegalChar = '?'
             return [], missingParenError(illegalChar, startPos, self.position)
+        for key in LvariablesMapping:
+            if(LvariablesMapping[key] == False):
+                startPos = self.position.copyPos()
+                illegalChar = '?'
+                print(f"'{key}' does not have a type declared")
+                sys.exit(1)
             
         return tokens, None
     
