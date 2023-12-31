@@ -63,7 +63,7 @@ class noLvarError(error):
 class badUseOfUvarError(error):
     #Missing Uvar should only be used after ^
     def __init__(self,description,startPos,endPos):
-        super().__init__('Uvar should only be used after a ^', description,startPos,endPos)
+        super().__init__("Uvar should only be used after a '^'", description,startPos,endPos)
 
 class multipleColonsError(error):
     #Colon has already been used somewhere
@@ -184,7 +184,9 @@ class lexer:
                     self.next()
                 #No letter or digit found directly after, thus end of Lvar variable name
                 tokens.append(token(TYPE_LVAR,newVariable))
-                LvariablesMapping[newVariable] = False #Map this variable to an empty type, to be found later
+                #Map this variable to an empty type, to be found later
+                #Only add this key once
+                LvariablesMapping.setdefault(newVariable, False) 
                 lastTokenType = TYPE_LVAR
             elif(self.currentCharacter in ' \t\n'):
                 #ignore spaces,tabs and newlines
@@ -237,13 +239,13 @@ class lexer:
                     lastNormalChar = self.currentCharacter
                     self.next()
             elif(self.currentCharacter in uppercaseLetters):
-                if(lastTokenType != TYPE_OFTYPE and colonFound == False):
+                if((lastTokenType != TYPE_OFTYPE and colonFound == False) and lastTokenType != TYPE_LEFTPAREN and lastTokenType != TYPE_ARROW):
                     #Uvar can only be used after ^ in expression part, so check this 
                     startPos = self.position.copyPos()
                     illegalChar = self.currentCharacter
                     return [], badUseOfUvarError(illegalChar, startPos, self.position)
                 #begin of Uvar variable found, continue to see if there are more letters or digits 
-                newVariable = '' #The construction of the variable name
+                newVariable = '' #The construction of the variable 
                 while (self.currentCharacter and (self.currentCharacter in letters or self.currentCharacter.isdigit())) and self.currentCharacter != None :
                     newVariable += self.currentCharacter
                     lastNormalChar = self.currentCharacter
@@ -265,10 +267,12 @@ class lexer:
                     return [], missingParenError(illegalChar, startPos, self.position)
                 else:
                     self.next()
-                    while(self.currentCharacter in ' \t\n'):
+                    while(self.currentCharacter and self.currentCharacter in ' \t\n'):
                         #Keep looping untill we find a new character or None
                         self.next()
                     if(self.currentCharacter == None):
+                        lastTokenType = TYPE_COLON
+                        tokens.append(token(TYPE_COLON))
                         continue
                     elif(self.currentCharacter != '('):
                          #The type part should either always start with an open parenthese or nothing.
@@ -348,10 +352,14 @@ def main():
     #run our lexer and collect the tokens and possible errors
     ourResult, ourError = run(sys.argv[1], fileContent)
 
+    if ourError: 
+        #Print the collected error if there is one
+        print(ourError.showError())
+        sys.exit(1)
+    
     #Print each token in the list
     print('Parsed tokens:', end = ' ')
     print(ourResult)
-
     #Display the simplified judgement
     print('Simplified output:', end = ' ')
     for i, token in enumerate(ourResult):
@@ -372,6 +380,7 @@ def main():
                 print(':',end='')
             elif token.Type == 'ARROW':
                 print('->',end='')
+    
 
 if __name__ == '__main__':
     main()
