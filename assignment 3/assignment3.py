@@ -10,6 +10,8 @@ import copy
 letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
            'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
+lowercaseLetters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+uppercaseLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 #ERRORS#
 class error:
     def __init__(self, name, description, startPos, endPos):
@@ -52,6 +54,17 @@ class noOpenParen(error):
     #the judgement expression should be opened with an open parenthese
     def __init__(self,description,startPos,endPos):
         super().__init__('missing expression open parenthese', description,startPos,endPos)
+
+class noLvarError(error):
+    #Missing Lvar before a ^ that has been found
+    def __init__(self,description,startPos,endPos):
+        super().__init__('missing Lvar variable before ^', description,startPos,endPos)
+
+class badUseOfUvarError(error):
+    #Missing Uvar should only be used after ^
+    def __init__(self,description,startPos,endPos):
+        super().__init__('Uvar should only be used after a ^', description,startPos,endPos)
+
 
 #POSITION#
 class position:
@@ -125,10 +138,20 @@ class lexer:
             self.currentCharacter = None
 
     def createTokens(self):
-        # Grammar rules: ⟨expr⟩ ::= ⟨var⟩ | '(' ⟨expr⟩ ')' | '\' ⟨var⟩ ⟨expr⟩ | ⟨expr⟩ ⟨expr⟩ #
+        # Grammar rules: 
+        # ⟨judgement⟩ ::= ⟨expr⟩ ':' ⟨type⟩
+        # ⟨expr⟩ ::= ⟨lvar⟩ | '(' ⟨expr⟩ ')' | '\' ⟨lvar⟩ '^' ⟨type⟩ ⟨expr⟩ | ⟨expr⟩ ⟨expr⟩
+        # ⟨type⟩ ::= ⟨uvar⟩ | '(' ⟨type⟩ ')' | ⟨type⟩ '->' ⟨type⟩
+
         tokens = []
         lastNormalChar = None
+        lastTokenType = None #If last token appended is LVAR, this is True.
         parenthesisOpenAmount = 0
+
+        while(self.currentCharacter != None or self.currentCharacter in ' \t\n'):
+            #Keep going untill we find a normal character
+            self.next()
+
         if(self.currentCharacter != '('):
             #Checks if the expression part of the judgement starts with an open parenthese
             startPos = self.position.copyPos()
@@ -137,20 +160,22 @@ class lexer:
 
         while(self.currentCharacter != None):
             #Ignore whitespaces and tabs
-            if self.currentCharacter in letters:
-                #begin of variable found, continue to see if there are more letters or digits 
+            if self.currentCharacter in lowercaseLetters:
+                #begin of Lvar variable found, continue to see if there are more letters or digits 
                 newVariable = '' #The construction of the variable name
                 while (self.currentCharacter and (self.currentCharacter in letters or self.currentCharacter.isdigit())) and self.currentCharacter != None :
                     newVariable += self.currentCharacter
                     lastNormalChar = self.currentCharacter
                     self.next()
-                #No letter or digit found directly after, thus end of variable name
+                #No letter or digit found directly after, thus end of Lvar variable name
                 tokens.append(token(TYPE_LVAR,newVariable))
+                lastTokenType = TYPE_LVAR
             elif(self.currentCharacter in ' \t\n'):
                 #ignore spaces,tabs and newlines
                 self.next()
             elif (self.currentCharacter == '('):
                 tokens.append(token(TYPE_LEFTPAREN))
+                lastTokenType = TYPE_LEFTPAREN
                 lastNormalChar = self.currentCharacter
                 parenthesisOpenAmount += 1
                 self.next()       
@@ -167,11 +192,13 @@ class lexer:
                     return [], missingParenError(illegalChar, startPos, self.position)
                     
                 tokens.append(token(TYPE_RIGHTPAREN))
+                lastTokenType = TYPE_RIGHTPAREN
                 parenthesisOpenAmount -= 1
                 lastNormalChar = self.currentCharacter
                 self.next()
             elif (self.currentCharacter == '\\' or self.currentCharacter == 'λ'):
                 tokens.append(token(TYPE_LAMBDA))
+                lastTokenType = TYPE_LAMBDA
                 lastNormalChar = self.currentCharacter
                 self.next()
                 while (self.currentCharacter and self.currentCharacter in ' \t\n'):
@@ -181,6 +208,63 @@ class lexer:
                     startPos = self.position.copyPos()
                     character = '?'
                     return [], missingVarError(character, startPos, self.position)
+            elif (self.currentCharacter == '^'):
+                if(lastTokenType != TYPE_LVAR):
+                    #If there isnt an Lvar before it, return error
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], noLvarError(illegalChar, startPos, self.position)
+                else:
+                    tokens.append(token(TYPE_OFTYPE))
+                    lastTokenType = TYPE_OFTYPE
+                    lastNormalChar = self.currentCharacter
+                    self.next()
+            elif(self.currentCharacter in uppercaseLetters):
+                if(lastTokenType != TYPE_OFTYPE):
+                    #Uvar can only be used after ^, so check this
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], badUseOfUvarError(illegalChar, startPos, self.position)
+                #begin of Uvar variable found, continue to see if there are more letters or digits 
+                newVariable = '' #The construction of the variable name
+                while (self.currentCharacter and (self.currentCharacter in letters or self.currentCharacter.isdigit())) and self.currentCharacter != None :
+                    newVariable += self.currentCharacter
+                    lastNormalChar = self.currentCharacter
+                    self.next()
+                #No letter or digit found directly after, thus end of Uvar variable name
+                tokens.append(token(TYPE_UVAR,newVariable))
+                lastTokenType = TYPE_UVAR
+            elif(self.currentCharacter == ':'):
+                if(lastTokenType != TYPE_RIGHTPAREN):
+                    #The expression part should be closed with a close parenthese
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], missingParenError(illegalChar, startPos, self.position)
+                else:
+                    self.next()
+                    while(self.currentCharacter != None or self.currentCharacter in ' \t\n'):
+                        #Keep looping untill we find a new character or None
+                        self.next()
+                    if(self.currentCharacter == None):
+                        continue
+                    elif(self.currentCharacter != '('):
+                         #The type part should either always start with an open parenthese or nothing.
+                         startPos = self.position.copyPos()
+                         illegalChar = self.currentCharacter
+                         return [], missingParenError(illegalChar, startPos, self.position)
+                    else:
+                        continue
+
+
+                    
+
+
+
+            
+
+
+
+
                     
             else:
                 #Unallowed character found
