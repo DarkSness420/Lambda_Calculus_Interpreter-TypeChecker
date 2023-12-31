@@ -47,3 +47,49 @@ class missingParenError(error):
     #There is missing a closed or open parenthese
     def __init__(self,description,startPos,endPos):
         super().__init__('missing a parenthese', description,startPos,endPos)
+
+#POSITION#
+class position:
+    def __init__(self,index,lineNum,colomNum, fileName, fileText):
+        self.index = index
+        self.lineNum = lineNum
+        self.colomNum = colomNum
+        self.fileName = fileName
+        self.fileText = fileText
+        
+    
+    def next(self, currentCharacter):
+        self.colomNum += 1
+        self.index += 1
+        #check if newline character is found
+        if(currentCharacter == '\n'):
+            #since we start on a new line, the first word is again at column 0
+            self.lineNum += 1
+            self.colomNum = 0
+        return self
+    
+    def copyPos(self):
+        #returns this object
+        return position(self.index,self.lineNum,self.colomNum,self.fileName,self.fileText)
+
+#TOKENS#
+TYPE_VAR = 'VAR'
+TYPE_LEFTPAREN = 'LEFTPAREN'
+TYPE_RIGHTPAREN = 'RIGHTPAREN'
+TYPE_LAMBDA = 'LAMBDA'
+
+class token:
+    #This function is for creating a new token
+    def __init__(self, Type, Value = None):
+        self.Type = Type
+        self.Value = Value
+        self.internIndex = 0
+
+    #Function to represent the token for display
+    def __repr__(self):
+        #if the token has a value, print type and then the value
+        #if it doesn't have one, just print the type.
+        if (self.Value):
+            return f'{self.Type}:{self.Value}'
+        else:
+            return f'{self.Type}'
