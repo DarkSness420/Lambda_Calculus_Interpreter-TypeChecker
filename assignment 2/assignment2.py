@@ -374,8 +374,9 @@ def readFile(fileName):
     try:
         with open(fileName, 'r') as file:
             return file.read()
-    except:
-        return f'file {fileName} not found'
+    except FileNotFoundError:
+        print('File has not been found')
+        sys.exit(1)
 
 def run(fileName,text):
     #Runs our lexer on this expression from the file

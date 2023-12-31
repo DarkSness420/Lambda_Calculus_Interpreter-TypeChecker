@@ -306,11 +306,17 @@ class lexer:
             illegalChar = '?'
             return [], missingParenError(illegalChar, startPos, self.position)
         for key in LvariablesMapping:
+            #check if every Lvar has a type bound
             if(LvariablesMapping[key] == False):
                 startPos = self.position.copyPos()
                 illegalChar = '?'
                 print(f"'{key}' does not have a type declared")
                 sys.exit(1)
+        if(colonFound == False):
+            #A colon is required for a judgement
+            print('No colon in judgement found')
+            sys.exit(1)
+        
             
         return tokens, None
     
@@ -320,8 +326,9 @@ def readFile(fileName):
     try:
         with open(fileName, 'r') as file:
             return file.read()
-    except:
-        return f'file {fileName} not found'
+    except FileNotFoundError:
+        print('File has not been found')
+        sys.exit(1)
 
 def run(fileName,text):
     #Runs our lexer on this expression from the file
