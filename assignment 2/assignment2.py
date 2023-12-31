@@ -434,7 +434,7 @@ def main():
         AST = Pars.parse()
         Interp = Interpreter()
         reduced_AST = Interp.reduce(AST)
-        print('Simplified expression: ', end = '')
+        print('Reduced expression: ', end = '')
         print(putInCorrectFormat(str(reduced_AST)))
         sys.exit(0)
 

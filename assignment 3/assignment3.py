@@ -345,5 +345,26 @@ def main():
     print('Parsed tokens:', end = ' ')
     print(ourResult)
 
+    #Display the simplified judgement
+    print('Simplified output:', end = ' ')
+    for i, token in enumerate(ourResult):
+            if token.Type == TYPE_LVAR or token.Type == TYPE_UVAR:
+                #Leave spaces inbetween variables
+                if i + 1 < len(ourResult) and (ourResult[i + 1].Type == TYPE_LVAR or ourResult[i + 1].Type == TYPE_UVAR): end = ' '
+                else: end = ''
+                print(token.Value, end = end)
+            elif token.Type == 'LEFTPAREN':
+                print('(',end='')
+            elif token.Type == 'RIGHTPAREN':
+                print(')',end='')
+            elif token.Type == 'LAMBDA':
+                print('\\',end='')
+            elif token.Type == 'OFTYPE':
+                print('^',end='')
+            elif token.Type == 'COLON':
+                print(':',end='')
+            elif token.Type == 'ARROW':
+                print('->',end='')
+
 if __name__ == '__main__':
     main()
