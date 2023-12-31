@@ -11,7 +11,7 @@ and the screen as well as a minimalistic output of the original expression. If t
 errors found in the program, this will be displayed instead and the program exits with code 1.
 There are no defects or any deviations from the assignment.
 
-##### It is possible to use a file with an expression in it, and give that to the program to use as stdin newlines, tabs and unnecesary whitepaces (that is, any whitespaces that arent between variables) are ignored.
+##### It is possible to use a file with a <u>single</u> expression in it, and give that to the program to use as stdin newlines, tabs and unnecesary whitepaces (that is, any whitespaces that arent between variables) are ignored.
 
 ##### the archived file positives.zip contains several txt documents with example expressions that can be used within the program
 
