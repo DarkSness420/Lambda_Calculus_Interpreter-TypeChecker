@@ -196,7 +196,7 @@ def main():
     #File support
     #Check if there is an argument given
     if (len(sys.argv) != 2):
-        print("Usage: ./assignment1.py <filename>")
+        print("Usage: python ./assignment1.py <filename>")
         sys.exit(1)
     else:
         fileContent = readFile(sys.argv[1])

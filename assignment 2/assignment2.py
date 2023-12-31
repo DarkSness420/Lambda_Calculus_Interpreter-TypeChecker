@@ -93,7 +93,6 @@ class token:
         else:
             return f'{self.Type}'
         
-
 #LEXER#
 class lexer:
 
@@ -410,7 +409,7 @@ def putInCorrectFormat(inpString):
 def main():
     #Check if there is an argument given
     if (len(sys.argv) != 2):
-        print("Usage: ./assignment2.py <filename>")
+        print("Usage: python ./assignment2.py <filename>")
         sys.exit(1)
     else:
         fileContent = readFile(sys.argv[1])

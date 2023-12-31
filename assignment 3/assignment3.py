@@ -65,6 +65,11 @@ class badUseOfUvarError(error):
     def __init__(self,description,startPos,endPos):
         super().__init__('Uvar should only be used after a ^', description,startPos,endPos)
 
+class multipleColonsError(error):
+    #Colon has already been used somewhere
+    def __init__(self,description,startPos,endPos):
+        super().__init__('There are multiple colons in this judgement', description,startPos,endPos)
+
 
 #POSITION#
 class position:
@@ -146,9 +151,11 @@ class lexer:
         tokens = []
         lastNormalChar = None
         lastTokenType = None #If last token appended is LVAR, this is True.
+        colonFound = False
         parenthesisOpenAmount = 0
 
-        while(self.currentCharacter != None or self.currentCharacter in ' \t\n'):
+        while(self.currentCharacter in ' \t\n'):
+            print('aaaa')
             #Keep going untill we find a normal character
             self.next()
 
@@ -159,6 +166,7 @@ class lexer:
             return [], noOpenParen(illegalChar, startPos, self.position)
 
         while(self.currentCharacter != None):
+            print(self.currentCharacter)
             #Ignore whitespaces and tabs
             if self.currentCharacter in lowercaseLetters:
                 #begin of Lvar variable found, continue to see if there are more letters or digits 
@@ -220,8 +228,8 @@ class lexer:
                     lastNormalChar = self.currentCharacter
                     self.next()
             elif(self.currentCharacter in uppercaseLetters):
-                if(lastTokenType != TYPE_OFTYPE):
-                    #Uvar can only be used after ^, so check this
+                if(lastTokenType != TYPE_OFTYPE and colonFound == False):
+                    #Uvar can only be used after ^ in expression part, so check this 
                     startPos = self.position.copyPos()
                     illegalChar = self.currentCharacter
                     return [], badUseOfUvarError(illegalChar, startPos, self.position)
@@ -235,6 +243,12 @@ class lexer:
                 tokens.append(token(TYPE_UVAR,newVariable))
                 lastTokenType = TYPE_UVAR
             elif(self.currentCharacter == ':'):
+                if(colonFound == True):
+                    #There is only one colon allowed per judgement
+                    startPos = self.position.copyPos()
+                    illegalChar = self.currentCharacter
+                    return [], multipleColonsError(illegalChar, startPos, self.position)
+                colonFound = True
                 if(lastTokenType != TYPE_RIGHTPAREN):
                     #The expression part should be closed with a close parenthese
                     startPos = self.position.copyPos()
@@ -242,7 +256,7 @@ class lexer:
                     return [], missingParenError(illegalChar, startPos, self.position)
                 else:
                     self.next()
-                    while(self.currentCharacter != None or self.currentCharacter in ' \t\n'):
+                    while(self.currentCharacter in ' \t\n'):
                         #Keep looping untill we find a new character or None
                         self.next()
                     if(self.currentCharacter == None):
@@ -254,17 +268,6 @@ class lexer:
                          return [], missingParenError(illegalChar, startPos, self.position)
                     else:
                         continue
-
-
-                    
-
-
-
-            
-
-
-
-
                     
             else:
                 #Unallowed character found
@@ -284,3 +287,37 @@ class lexer:
             return [], missingParenError(illegalChar, startPos, self.position)
             
         return tokens, None
+    
+
+def readFile(fileName):
+    #read the file if it can be found
+    try:
+        with open(fileName, 'r') as file:
+            return file.read()
+    except:
+        return f'file {fileName} not found'
+
+def run(fileName,text):
+    #Runs our lexer on this expression from the file
+    ourlexer = lexer(fileName,text)
+    tokensS, errorMess = ourlexer.createTokens()
+    return tokensS, errorMess
+
+def main():
+     #Check if there is an argument given
+    if (len(sys.argv) != 2):
+        print("Usage: python ./assignment3.py <filename>")
+        sys.exit(1)
+    else:
+        fileContent = readFile(sys.argv[1])
+
+
+    #run our lexer and collect the tokens and possible errors
+    ourResult, ourError = run(sys.argv[1], fileContent)
+
+    #Print each token in the list
+    print('Parsed tokens:', end = ' ')
+    print(ourResult)
+
+if __name__ == '__main__':
+    main()
