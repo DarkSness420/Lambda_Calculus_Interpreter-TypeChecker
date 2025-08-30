@@ -1,4 +1,4 @@
-# Lambda calculus: Type Checker
+# Lambda calculus: Interpreter & Type Checker
 - Author: Ryan Behari
 
 This program accepts exactly a <u>single</u> argument, namely a text file with a <u>single</u> judgement inside. Enters, tabs and whitespaces(excluding between UVariables and Lvariables) are ignored. The program reads the text from the file into a character string and makes tokens using a modified lexer from the previous assignments that now also excepts Uvariables, Lvariables, ^, -> and Colons as tokens. These tokens are checked if they meet the criteria to get accepted as a judgement, that is, every valuable should have a type. And the judgement is split into an expression part as well as a types part seperated by a colon.
